@@ -3,8 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex">
+<meta name="description" content="Quote a tree job on site: pick the work, set the size and access, and get a price range straight away. Works on a phone.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f7a2d">
+<link rel="icon" href="../assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Chilly's Qualified Tree Service">
+<meta property="og:title" content="Chilly's: quoting app">
+<meta property="og:description" content="Quote a tree job on site: pick the work, set the size and access, and get a price range straight away. Works on a phone.">
+<meta property="og:url" content="https://nnattheuu-oss.github.io/chillys-preview/app/index.html">
+<meta property="og:image" content="https://nnattheuu-oss.github.io/chillys-preview/assets/og-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Chilly's Quoter</title>
+<title>Chilly's: quoting app</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap">
@@ -313,7 +328,10 @@ textarea { resize: vertical; }
 .f-sub { font-size: 0.92rem; }
 .f-qno { font-family: var(--font-display); font-size: 0.78rem; letter-spacing: 0.1em; white-space: nowrap; }
 @media (max-width: 440px) { .f-qno { display: none; } }
-.f-trees { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.f-trees { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; scroll-snap-type: x proximity; }
+.f-trees > * { scroll-snap-align: start; }
+/* A fade at the right edge says "there's more" when the trees run off the screen. */
+@media (max-width: 600px) { .f-trees { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); padding-right: 28px; } }
 .f-tab {
   flex: none; display: flex; flex-direction: column; align-items: flex-start; min-height: 56px; padding: 8px 14px;
   border: 2px solid var(--edge); background: var(--sheet); border-radius: var(--r); cursor: pointer; font-weight: 700; text-align: left;
@@ -380,11 +398,16 @@ body.on-field .wrap { padding-block: 12px 24px; }
   .f-stepper input { font-size: 1.15rem; }
 }
 
+
 .compare { display: none !important; }
+.demo-note { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #f2f0d9; border-bottom: 1px solid #ccc9a5; padding: 6px 16px; font: 600 0.85rem 'Nunito Sans', system-ui, sans-serif; color: #33332f; }
+.demo-note[hidden] { display: none; }
+.demo-note button { flex: none; min-height: 36px; border: 1.5px solid #7d7a57; background: #fff; color: #33332f; border-radius: 6px; padding: 0 12px; font: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
 <!--app:start-->
+<div class="demo-note" id="demo-note" hidden><span>Demo data: nothing here is real.</span><button type="button" id="demo-reset">Start blank</button></div>
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand">
@@ -2070,6 +2093,42 @@ body.on-field .wrap { padding-block: 12px 24px; }
 
 </script>
 <script>
+(function () {
+  'use strict';
+  try {
+    var L = localStorage;
+    if (L.getItem('tq4.draft') || L.getItem('tq3.saved') || L.getItem('tq.demoSeeded')) return;
+    var J = window.Jobs, P = window.Pricing, rates = P.mergeRates(null);
+    var DAY = 86400000, now = Date.now();
+    function make(id, n, status, daysAgo, o) {
+      var j = J.blankJob();
+      j.id = id; j.number = n; j.status = status; j.created = new Date(now - daysAgo * DAY).toISOString();
+      j.suburb = o.suburb; j.timing = o.timing || 'flexible';
+      j.trees = o.trees.map(function (t) { return J.newTree(Object.assign({ sized: true }, t)); });
+      Object.assign(j.extras, o.extras || {});
+      Object.assign(j.customer, o.customer);
+      return j;
+    }
+    function entry(j, daysAgo, charged) {
+      var r = P.calculate(j, rates);
+      var e = { job: j, total: r.total, low: r.low, high: r.high, savedAt: new Date(now - daysAgo * DAY).toISOString() };
+      if (charged) e.charged = Math.round(r.total * charged / 10) * 10;
+      return e;
+    }
+    var won = make('demo1', 'Q-DEMO-101', 'won', 9, { suburb: 'Balga', trees: [{ type: 'gum', scope: 'removal_stump', height: 12, trunk: 55, canopy: 8, felling: 'no_fell' }], customer: { name: 'Mia Carter (demo)', phone: '0400 000 001', address: '8 Example Way' } });
+    var sent = make('demo2', 'Q-DEMO-102', 'sent', 4, { suburb: 'Wanneroo', trees: [{ type: 'jacaranda', scope: 'lite_prune', height: 6, trunk: 25, canopy: 6, qty: 2, access: 'easy' }], extras: { hedgeMetres: 18, hedgeBand: 'h2' }, customer: { name: 'Tom Nguyen (demo)', phone: '0400 000 002', address: '3 Sample Court' } });
+    var draft = make('demo3', 'Q-DEMO-103', 'draft', 2, { suburb: 'Joondalup', trees: [{ type: 'gum', scope: 'stump_only', height: 15, trunk: 60 }], customer: { name: 'Lee Park (demo)', phone: '0400 000 003', address: '21 Demo Street' } });
+    var lost = make('demo4', 'Q-DEMO-104', 'lost', 14, { suburb: 'Armadale', trees: [{ type: 'marri', scope: 'heavy_prune', height: 15, trunk: 70, canopy: 10 }], customer: { name: 'Kim Brown (demo)', phone: '0400 000 004', address: '5 Pretend Road' } });
+    L.setItem('tq3.saved', JSON.stringify([entry(draft, 2), entry(sent, 4), entry(won, 9, 1.03), entry(lost, 14)]));
+    // The quote on screen: a worked example with two kinds of tree, a hedge and a stump.
+    var cur = make(null, J.quoteNumber(), 'draft', 0, { suburb: 'Girrawheen', timing: 'nextweek', trees: [{ type: 'gum', scope: 'removal_stump', height: 14, trunk: 55, canopy: 9, felling: 'no_fell', pruned: 'never', carry: 'mid' }, { type: 'jacaranda', scope: 'lite_prune', height: 6, trunk: 25, canopy: 6, qty: 2, access: 'easy' }], extras: { hedgeMetres: 15, hedgeBand: 'h4' }, customer: { name: 'Pat Jones (demo)', phone: '0400 000 000', address: '12 Sample Street', notes: 'Big gum over the back shed, out with the stump. Lift the two jacarandas off the gutters.' } });
+    L.setItem('tq4.draft', JSON.stringify(cur));
+    L.setItem('tq.demo', '1');
+    L.setItem('tq.demoSeeded', '1');
+  } catch (e) { /* storage blocked: the app just opens blank */ }
+})();
+</script>
+<script>
 /* app.js */
 /* Treeline Quoter UI. Depends on pricing.js (window.Pricing). */
 (function () {
@@ -3393,5 +3452,18 @@ body.on-field .wrap { padding-block: 12px 24px; }
 })();
 
 </script>
+<script>
+(function () {
+  try {
+    var note = document.getElementById('demo-note');
+    if (localStorage.getItem('tq.demo') === '1') note.hidden = false;
+    document.getElementById('demo-reset').addEventListener('click', function () {
+      ['tq4.draft', 'tq3.saved', 'tq.demo'].forEach(function (k) { localStorage.removeItem(k); });
+      location.reload();
+    });
+  } catch (e) { /* nothing to show */ }
+})();
+</script>
+<script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
 </body>
 </html>

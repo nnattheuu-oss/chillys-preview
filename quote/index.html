@@ -3,8 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex">
+<meta name="description" content="Answer a few questions, add a photo of the tree, and see your price range straight away. Needs a full street address.">
+<meta name="theme-color" content="#2f7a2d">
+<link rel="icon" href="../assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Chilly's Qualified Tree Service">
+<meta property="og:title" content="Chilly's: instant tree quote">
+<meta property="og:description" content="Answer a few questions, add a photo of the tree, and see your price range straight away. Needs a full street address.">
+<meta property="og:url" content="https://nnattheuu-oss.github.io/chillys-preview/quote/index.html">
+<meta property="og:image" content="https://nnattheuu-oss.github.io/chillys-preview/assets/og-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Instant Tree Quote (demo)</title>
+<title>Chilly's: instant tree quote</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -250,6 +264,13 @@ body { margin: 0; background: var(--qw-cream); color: var(--qw-ink); font: 16px/
 .qw-photoask { display: flex; flex-direction: column; gap: 10px; border-top: 2px solid var(--qw-ink); padding-top: 14px; margin-top: 4px; }
 .qw-photoask h3 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--qw-brown); }
 .qw-photoask .qw-note { margin: 0; }
+
+/* Narrow screens: the step label gets its own line, with the progress dashes underneath, rather than wrapping beside them. */
+@media (max-width: 480px) {
+  .qw-stephead { flex-wrap: wrap; row-gap: 8px; }
+  .qw-dots { flex: 1 1 100%; }
+  .qw-dots li { flex: 1 1 0; width: auto; }
+}
 
 </style>
 </head>
@@ -2914,7 +2935,7 @@ window.CHILLY_QUOTE_CONFIG = {
   function init() {
     const name = CFG.business || RATES.business.name;
     $('.qw-logo').alt = name;
-    $('#qw-preview').hidden = mode !== 'preview';
+    $('#qw-preview').hidden = mode !== 'preview' || CFG.calendarUrl === 'demo'; // the demo strip already says nothing is sent
     const heroText = { title: $('#qw-title').textContent, sub: $('.qw-sub').textContent };
     const hero = () => {
       $('#qw-title').textContent = FROM_CALL ? 'Sorry we missed your call' : heroText.title;
